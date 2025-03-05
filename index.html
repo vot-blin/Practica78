@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Catalog</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Product Catalog</h1>
+    </header>
+    <main>
+        <div class="product-grid" id="products">
+            <!-- Товары будут вставлены сюда -->
+        </div>
+        <div id="chat">
+            <h2>Chat</h2>
+            <div id="messages"></div>
+            <input type="text" id="messageInput" placeholder="Type a message">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </main>
+    <script>
+        const ws = new WebSocket('ws://localhost:8081');
+
+        ws.onmessage = (event) => {
+            const messages = document.getElementById('messages');
+            const message = document.createElement('div');
+            message.textContent = event.data;
+            messages.appendChild(message);
+        };
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            ws.send(input.value);
+            input.value = '';
+        }
+
+        async function fetchGraphQL(query) {
+            const response = await fetch('http://localhost:3000/graphql', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ query }),
+            });
+            return response.json();
+        }
+
+        async function loadProducts() {
+            const query = `
+                {
+                    products {
+                        id
+                        title
+                        price
+                        description
+                        category
+                    }
+                }
+            `;
+            const result = await fetchGraphQL(query);
+            const products = result.data.products;
+
+            const productsContainer = document.getElementById('products');
+            productsContainer.innerHTML = '';
+            products.forEach(product => {
+                const productCard = document.createElement('div');
+                productCard.className = 'product-card';
+                productCard.innerHTML = `
+                    <div class="product-image">
+                        <img src="lyubopitnii-kot-u-dereva.orig.jpg" alt="${product.title}">
+                    </div>
+                    <div class="product-details">
+                        <h3>${product.title}</h3>
+                        <p class="price">$${product.price}</p>
+                        <p class="description">${product.description}</p>
+                        <div class="categories">
+                            ${product.category.map(cat => `<span class="category-tag">${cat}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+                productsContainer.appendChild(productCard);
+            });
+        }
+
+        window.onload = loadProducts;
+    </script>
+</body>
+</html>
