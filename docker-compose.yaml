@@ -1,0 +1,59 @@
+version: '4.40'
+
+services:
+  backend1:
+    build: .
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./products.json:/usr/src/app/products.json
+    command: node server.js
+    environment:
+      - PORT=3000
+
+  backend2:
+    build: .
+    ports:
+      - "3002:3000"
+    volumes:
+      - ./products.json:/usr/src/app/products.json
+    command: node server.js
+    environment:
+      - PORT=3000
+
+  backend3:
+    build: .
+    ports:
+      - "3003:3000"
+    volumes:
+      - ./products.json:/usr/src/app/products.json
+    command: node server.js
+    environment:
+      - PORT=3000
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - backend1
+      - backend2
+      - backend3
+
+  admin:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./products.json:/usr/src/app/products.json
+    command: node admin.js
+    depends_on:
+      - backend1
+
+  websocket:
+    build: .
+    ports:
+      - "8081:8081"
+    command: node websocket.js
